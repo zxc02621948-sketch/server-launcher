@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.pyc
+
+# PyInstaller 打包產物
+build/
+dist/
+*.spec
+
+# 個人專案清單(各自本機不同，不要進版控)
+projects.json
