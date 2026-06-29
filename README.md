@@ -2,7 +2,11 @@
 
 # Local Server Launcher · 本地服務器啟動台
 
-🌐 **English** · [繁體中文 ↓](#繁體中文)
+<div align="center">
+
+### 🌐 English　｜　[🇹🇼 繁體中文 ↓](#繁體中文)
+
+</div>
 
 > Vibe-coding a bunch of small sites/apps with AI, but tired of opening a terminal, typing commands,
 > remembering ports, and opening the browser by hand every time? This tiny GUI makes it one click:
@@ -95,7 +99,11 @@ MIT — see [LICENSE](LICENSE).
 
 ## 繁體中文
 
-🌐 [English ↑](#top) · **繁體中文**
+<div align="center">
+
+### [🌐 English ↑](#top)　｜　🇹🇼 繁體中文
+
+</div>
 
 > 用 AI 生了一堆小網站 / 小工具,但每次要打開來看,還得開終端機、打指令、記 port、再手動開瀏覽器?
 > 這個小工具把它變成**點一下就好**:匯入資料夾 → 按 ▶ 啟動 → 按 🌐 開瀏覽器。原生視窗、中文介面、零設定檔。
