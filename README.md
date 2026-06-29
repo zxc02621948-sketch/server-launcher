@@ -9,6 +9,14 @@
 
 ![本地服務器啟動台主畫面](demo/screenshot.png)
 
+## ⬇️ 下載 / Download
+
+[![Download for Windows](https://img.shields.io/badge/Download-Windows_.exe-2ea44f?style=for-the-badge&logo=windows)](https://github.com/zxc02621948-sketch/server-launcher/releases/latest/download/server-launcher.exe)
+
+👉 **[點此下載 Windows 版（免安裝、不需 Python）](https://github.com/zxc02621948-sketch/server-launcher/releases/latest/download/server-launcher.exe)** — 點了直接下載,雙擊就能用。
+
+> 第一次開啟會跳 SmartScreen「Windows 已保護你的電腦 / 無法辨識的發行者」→ 點 **「其他資訊 → 仍要執行」** 即可(未簽章小工具的正常現象,不是病毒)。
+
 ## 這是給誰用的 / Who it's for
 - 用 AI 寫網站 / 小 app,但**不熟終端機**的人
 - 同時在弄好幾個專案,想要一個地方**一鍵啟停、各自看日誌**
@@ -25,8 +33,8 @@
 ## 安裝與執行 / Install & Run
 
 ### A. 不懂程式的人 — 直接用 .exe
-到 [Releases](../../releases) 下載 `server-launcher.exe`,**雙擊就能用**,不用裝 Python。
-> 還沒有 Release 的話,請作者用下面的 `build.bat` 打包後上傳。
+👉 **[點此直接下載 server-launcher.exe](https://github.com/zxc02621948-sketch/server-launcher/releases/latest/download/server-launcher.exe)** —— 下載後**雙擊就能用**,不用裝 Python。
+> 下載頁裡那兩個 `Source code (zip / tar.gz)` 是**原始碼**,給工程師看的,一般使用者**不用理它**,只要上面那個 .exe。
 
 ### B. 有 Python 的人
 ```bash
