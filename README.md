@@ -7,8 +7,7 @@
 > remembering ports, and opening the browser by hand every time? This tiny GUI makes it one click:
 > import a folder → ▶ Start → 🌐 Open. Native window, no config files.
 
-<!-- 截圖放這:把主畫面截圖存成 demo/screenshot.png 取消下面註解 -->
-<!-- ![screenshot](demo/screenshot.png) -->
+![本地服務器啟動台主畫面](demo/screenshot.png)
 
 ## 這是給誰用的 / Who it's for
 - 用 AI 寫網站 / 小 app,但**不熟終端機**的人
