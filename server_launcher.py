@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-本地服務器啟動台 — 把專案資料夾匯入、一鍵啟動本地服務器,
-每個專案一格、各自一塊黑底 console 看日誌。原生視窗,不開瀏覽器。
+本地服務器啟動台 / Local Server Launcher
+把專案資料夾匯入、一鍵啟動本地服務器,每個專案一格、各自一塊黑底 console 看日誌。
+Import project folders, start local dev servers with one click, each in its own card with a live log.
 
-跑法:  pythonw server_launcher.py   （或直接點 啟動.bat）
+跑法 / Run:  pythonw server_launcher.py   （或雙擊 啟動.vbs / or double-click 啟動.vbs）
 """
 import sys
 import os
@@ -13,7 +14,7 @@ import socket
 import subprocess
 import webbrowser
 
-from PySide6.QtCore import Qt, QProcess, QProcessEnvironment
+from PySide6.QtCore import Qt, QProcess, QProcessEnvironment, QSettings, QLocale
 from PySide6.QtGui import QFont, QTextCursor
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
@@ -37,6 +38,105 @@ GRID_COLS = 2             # 一排幾格
 # dev server 啟動時通常會在 console 印出真正的網址(Next 預設 3000、Vite 5173…),
 # 跟我們設定的 port 不一定一樣。從 console 抓 localhost 網址,開瀏覽器才不會開錯。
 LOCAL_URL_RE = re.compile(r"https?://(?:localhost|127\.0\.0\.1|0\.0\.0\.0)(?::(\d+))?", re.I)
+
+# ───────────────────────── 多語系 / i18n ─────────────────────────
+STRINGS = {
+    "zh": {
+        "app_title": "本地服務器啟動台",
+        "support": "☕ 支持作者",
+        "support_tip": "請我喝杯咖啡,支持工具持續開發",
+        "lang_switch": "EN",
+        "start_all": "▶ 全部啟動",
+        "stop_all": "■ 全部停止",
+        "import": "＋ 匯入專案資料夾",
+        "hint_empty": "按「＋ 匯入專案資料夾」加入你的第一個專案。",
+        "btn_start": "▶ 啟動",
+        "btn_stop": "■ 停止",
+        "tip_open": "在瀏覽器開啟",
+        "tip_edit": "編輯",
+        "tip_remove": "移除",
+        "clear": "🧹 清空",
+        "st_stopped": "已停止",
+        "st_error": "發生錯誤",
+        "st_running": "執行中 · {url}",
+        "log_start": "» 啟動:{cmd}\n  工作目錄:{d}\n",
+        "log_no_dir": "» 資料夾不存在:{d}\n",
+        "log_stopping": "» 停止中…\n",
+        "log_stopped": "» 已停止\n",
+        "log_done_ok": "» 程序正常結束\n",
+        "log_done_err": "» 程序異常結束(code {code})\n",
+        "log_fail": "» 啟動失敗:指令無法執行(檢查指令是否正確、python 在不在 PATH)\n",
+        "dlg_edit": "編輯專案",
+        "f_name": "名稱",
+        "f_dir": "資料夾",
+        "f_port": "Port",
+        "f_command": "啟動指令",
+        "browse": "瀏覽…",
+        "dlg_tip": "指令裡可用 {port}、{dir} 代換。例:python -m http.server {port}",
+        "choose_dir": "選擇專案資料夾",
+        "rm_title": "移除",
+        "rm_confirm": "「{name}」還在執行,移除會先停掉它,確定?",
+        "close_title": "關閉",
+        "close_confirm": "還有 {n} 個服務器在跑,關掉視窗會一起停掉。確定關閉?",
+    },
+    "en": {
+        "app_title": "Local Server Launcher",
+        "support": "☕ Support",
+        "support_tip": "Buy me a coffee to support development",
+        "lang_switch": "中文",
+        "start_all": "▶ Start All",
+        "stop_all": "■ Stop All",
+        "import": "＋ Import Project Folder",
+        "hint_empty": "Click “＋ Import Project Folder” to add your first project.",
+        "btn_start": "▶ Start",
+        "btn_stop": "■ Stop",
+        "tip_open": "Open in browser",
+        "tip_edit": "Edit",
+        "tip_remove": "Remove",
+        "clear": "🧹 Clear",
+        "st_stopped": "Stopped",
+        "st_error": "Error",
+        "st_running": "Running · {url}",
+        "log_start": "» Start: {cmd}\n  Working dir: {d}\n",
+        "log_no_dir": "» Folder not found: {d}\n",
+        "log_stopping": "» Stopping…\n",
+        "log_stopped": "» Stopped\n",
+        "log_done_ok": "» Process exited normally\n",
+        "log_done_err": "» Process exited abnormally (code {code})\n",
+        "log_fail": "» Failed to start: command could not run (check the command, and that python is on PATH)\n",
+        "dlg_edit": "Edit Project",
+        "f_name": "Name",
+        "f_dir": "Folder",
+        "f_port": "Port",
+        "f_command": "Command",
+        "browse": "Browse…",
+        "dlg_tip": "You can use {port} and {dir} in the command. e.g. python -m http.server {port}",
+        "choose_dir": "Choose project folder",
+        "rm_title": "Remove",
+        "rm_confirm": "“{name}” is still running; removing will stop it first. Continue?",
+        "close_title": "Close",
+        "close_confirm": "{n} server(s) still running; closing the window will stop them. Close anyway?",
+    },
+}
+_LANG = "zh"
+
+
+def t(key, **kw):
+    s = STRINGS.get(_LANG, STRINGS["zh"]).get(key) or STRINGS["zh"].get(key, key)
+    return s.format(**kw) if kw else s
+
+
+def set_lang(code):
+    global _LANG
+    _LANG = code if code in STRINGS else "zh"
+
+
+def detect_lang():
+    """先看有沒有存過偏好,沒有就依系統語言自動選。"""
+    saved = QSettings("KuanmingTools", "ServerLauncher").value("lang")
+    if saved in ("zh", "en"):
+        return saved
+    return "zh" if QLocale.system().name().startswith("zh") else "en"
 
 # ───────────────────────── 外觀(深色主題) ─────────────────────────
 QSS = """
@@ -128,6 +228,7 @@ class ProjectCard(QFrame):
         self.dash = dashboard
         self._stopping = False          # 區分「使用者按停止」vs「程序自己掛掉」
         self.detected_url = None        # dev server 實際印出的網址(開瀏覽器用)
+        self._state = "stopped"         # 記住目前狀態,切換語言時可重新套字串
         self.setObjectName("card")
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
@@ -168,15 +269,17 @@ class ProjectCard(QFrame):
         head.addWidget(self.name_lbl)
         head.addStretch(1)
 
-        self.run_btn = QPushButton("▶ 啟動")
+        self.run_btn = QPushButton(t("btn_start"))
         self.run_btn.clicked.connect(self.toggle_run)
         head.addWidget(self.run_btn)
-        for txt, fn, tip in [("🌐", self.open_browser, "在瀏覽器開啟"),
-                             ("✎", self.edit, "編輯"),
-                             ("🗑", self.remove, "移除")]:
-            b = QPushButton(txt); b.setObjectName("icon"); b.setToolTip(tip)
+        self.icon_btns = {}
+        for key, txt, fn in [("tip_open", "🌐", self.open_browser),
+                             ("tip_edit", "✎", self.edit),
+                             ("tip_remove", "🗑", self.remove)]:
+            b = QPushButton(txt); b.setObjectName("icon"); b.setToolTip(t(key))
             b.clicked.connect(fn)
             head.addWidget(b)
+            self.icon_btns[key] = b
         outer.addLayout(head)
 
         # 第二排:路徑 ......... :port
@@ -198,12 +301,19 @@ class ProjectCard(QFrame):
 
         # 底排:狀態文字 ......... 清空
         foot = QHBoxLayout()
-        self.status_lbl = QLabel("已停止"); self.status_lbl.setObjectName("status")
-        clr = QPushButton("🧹 清空"); clr.setObjectName("icon")
-        clr.clicked.connect(lambda: self.console.clear())
+        self.status_lbl = QLabel(t("st_stopped")); self.status_lbl.setObjectName("status")
+        self.clr_btn = QPushButton(t("clear")); self.clr_btn.setObjectName("icon")
+        self.clr_btn.clicked.connect(lambda: self.console.clear())
         foot.addWidget(self.status_lbl, 1)
-        foot.addWidget(clr)
+        foot.addWidget(self.clr_btn)
         outer.addLayout(foot)
+
+    def retranslate(self):
+        """切換語言時重新套用這張卡上的所有固定字串。"""
+        for key, b in self.icon_btns.items():
+            b.setToolTip(t(key))
+        self.clr_btn.setText(t("clear"))
+        self._set_status(self._state)   # 同時更新狀態文字 + 啟動/停止鈕
 
     # ---- 啟動 / 停止 ----
     def is_running(self):
@@ -215,7 +325,7 @@ class ProjectCard(QFrame):
     def start(self):
         d = self.cfg["dir"]
         if not os.path.isdir(d):
-            self.append(f"» 資料夾不存在:{d}\n")
+            self.append(t("log_no_dir", d=d))
             self._set_status("error")
             return
         cmd = (self.cfg["command"]
@@ -223,7 +333,7 @@ class ProjectCard(QFrame):
                .replace("{dir}", d))
         self._stopping = False
         self.detected_url = None
-        self.append(f"» 啟動:{cmd}\n  工作目錄:{d}\n")
+        self.append(t("log_start", cmd=cmd, d=d))
         self.proc.setWorkingDirectory(d)
         if sys.platform == "win32":
             self.proc.start("cmd", ["/c", cmd])     # 走 cmd /c → npm/flask/內建指令都能跑
@@ -236,7 +346,7 @@ class ProjectCard(QFrame):
             self._set_status("stopped")
             return
         self._stopping = True
-        self.append("» 停止中…\n")
+        self.append(t("log_stopping"))
         pid = int(self.proc.processId())
         if sys.platform == "win32" and pid:
             # /T 連子程序一起殺(npm 之類會 spawn 子程序)
@@ -262,33 +372,35 @@ class ProjectCard(QFrame):
             port = m.group(1)
             self.detected_url = f"http://localhost:{port}" if port else "http://localhost"
             if self.is_running():
-                self.status_lbl.setText(f"執行中 · {self.detected_url}")
+                self.status_lbl.setText(t("st_running", url=self.detected_url))
 
     def _on_finished(self, code, _status):
         if self._stopping:
-            self.append("» 已停止\n"); self._set_status("stopped")
+            self.append(t("log_stopped")); self._set_status("stopped")
         elif code == 0:
-            self.append("» 程序正常結束\n"); self._set_status("stopped")
+            self.append(t("log_done_ok")); self._set_status("stopped")
         else:
-            self.append(f"» 程序異常結束(code {code})\n"); self._set_status("error")
+            self.append(t("log_done_err", code=code)); self._set_status("error")
         self._stopping = False
 
     def _on_error(self, err):
         if err == QProcess.FailedToStart:
-            self.append("» 啟動失敗:指令無法執行(檢查指令是否正確、python 在不在 PATH)\n")
+            self.append(t("log_fail"))
             self._set_status("error")
 
     # ---- 狀態顯示 ----
     def _set_status(self, state):
+        self._state = state
         if state == "running":
             self.dot.setStyleSheet("color:#3ddc84;")
-            self.status_lbl.setText(f"執行中 · http://localhost:{self.cfg['port']}")
-            self.run_btn.setText("■ 停止")
+            url = self.detected_url or f"http://localhost:{self.cfg['port']}"
+            self.status_lbl.setText(t("st_running", url=url))
+            self.run_btn.setText(t("btn_stop"))
             self.run_btn.setStyleSheet(RUN_BTN_RUNNING)
         else:
             self.dot.setStyleSheet("color:#ff5c5c;" if state == "error" else "color:#777;")
-            self.status_lbl.setText("發生錯誤" if state == "error" else "已停止")
-            self.run_btn.setText("▶ 啟動")
+            self.status_lbl.setText(t("st_error") if state == "error" else t("st_stopped"))
+            self.run_btn.setText(t("btn_start"))
             self.run_btn.setStyleSheet(RUN_BTN_STOPPED)
 
     def append(self, text):
@@ -316,7 +428,7 @@ class ProjectCard(QFrame):
 
     def remove(self):
         if self.is_running():
-            if QMessageBox.question(self, "移除", f"「{self.cfg['name']}」還在執行,移除會先停掉它,確定?") \
+            if QMessageBox.question(self, t("rm_title"), t("rm_confirm", name=self.cfg["name"])) \
                     != QMessageBox.Yes:
                 return
             self.stop()
@@ -327,7 +439,7 @@ class ProjectCard(QFrame):
 class EditDialog(QDialog):
     def __init__(self, cfg, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("編輯專案")
+        self.setWindowTitle(t("dlg_edit"))
         self.setMinimumWidth(480)
         form = QFormLayout(self)
 
@@ -337,15 +449,15 @@ class EditDialog(QDialog):
 
         dir_row = QHBoxLayout()
         self.dir = QLineEdit(cfg["dir"])
-        browse = QPushButton("瀏覽…"); browse.clicked.connect(self._browse)
+        browse = QPushButton(t("browse")); browse.clicked.connect(self._browse)
         dir_row.addWidget(self.dir, 1); dir_row.addWidget(browse)
         dir_wrap = QWidget(); dir_wrap.setLayout(dir_row)
 
-        form.addRow("名稱", self.name)
-        form.addRow("資料夾", dir_wrap)
-        form.addRow("Port", self.port)
-        form.addRow("啟動指令", self.command)
-        tip = QLabel("指令裡可用 {port}、{dir} 代換。例:python -m http.server {port}")
+        form.addRow(t("f_name"), self.name)
+        form.addRow(t("f_dir"), dir_wrap)
+        form.addRow(t("f_port"), self.port)
+        form.addRow(t("f_command"), self.command)
+        tip = QLabel(t("dlg_tip"))
         tip.setObjectName("hint")
         form.addRow("", tip)
 
@@ -354,7 +466,7 @@ class EditDialog(QDialog):
         form.addRow(btns)
 
     def _browse(self):
-        d = QFileDialog.getExistingDirectory(self, "選擇專案資料夾", self.dir.text() or HERE)
+        d = QFileDialog.getExistingDirectory(self, t("choose_dir"), self.dir.text() or HERE)
         if d:
             self.dir.setText(d)
 
@@ -376,7 +488,6 @@ class Dashboard(QMainWindow):
     def __init__(self):
         super().__init__()
         self.cards = []
-        self.setWindowTitle("本地服務器啟動台")
         self.resize(1140, 800)
 
         root = QWidget(); root.setObjectName("root")
@@ -387,21 +498,22 @@ class Dashboard(QMainWindow):
 
         # 工具列
         bar = QHBoxLayout()
-        title = QLabel("本地服務器啟動台"); title.setObjectName("title")
-        bar.addWidget(title)
+        self.title_lbl = QLabel(); self.title_lbl.setObjectName("title")
+        bar.addWidget(self.title_lbl)
         bar.addStretch(1)
-        add = QPushButton("＋ 匯入專案資料夾"); add.setObjectName("primary")
-        add.clicked.connect(self.import_project)
-        start_all = QPushButton("▶ 全部啟動"); start_all.clicked.connect(self.start_all)
-        stop_all = QPushButton("■ 全部停止"); stop_all.clicked.connect(self.stop_all)
-        support = QPushButton("☕ 支持作者")
-        support.setToolTip("請我喝杯咖啡,支持工具持續開發")
-        support.clicked.connect(lambda: webbrowser.open(KOFI_URL))
-        for b in (support, start_all, stop_all, add):
+        self.add_btn = QPushButton(); self.add_btn.setObjectName("primary")
+        self.add_btn.clicked.connect(self.import_project)
+        self.start_all_btn = QPushButton(); self.start_all_btn.clicked.connect(self.start_all)
+        self.stop_all_btn = QPushButton(); self.stop_all_btn.clicked.connect(self.stop_all)
+        self.support_btn = QPushButton()
+        self.support_btn.clicked.connect(lambda: webbrowser.open(KOFI_URL))
+        self.lang_btn = QPushButton(); self.lang_btn.setObjectName("icon")
+        self.lang_btn.clicked.connect(self.toggle_lang)
+        for b in (self.support_btn, self.lang_btn, self.start_all_btn, self.stop_all_btn, self.add_btn):
             bar.addWidget(b)
         main.addLayout(bar)
 
-        self.hint = QLabel("按「＋ 匯入專案資料夾」加入你的第一個專案。")
+        self.hint = QLabel()
         self.hint.setObjectName("hint")
         main.addWidget(self.hint)
 
@@ -418,11 +530,31 @@ class Dashboard(QMainWindow):
         main.addWidget(self.scroll, 1)
 
         self.setStyleSheet(QSS)
+        self.retranslate_ui()
         self.load_config()
+
+    # ---- 語言 ----
+    def toggle_lang(self):
+        set_lang("en" if _LANG == "zh" else "zh")
+        QSettings("KuanmingTools", "ServerLauncher").setValue("lang", _LANG)
+        self.retranslate_ui()
+        for c in self.cards:
+            c.retranslate()
+
+    def retranslate_ui(self):
+        self.setWindowTitle(t("app_title"))
+        self.title_lbl.setText(t("app_title"))
+        self.add_btn.setText(t("import"))
+        self.start_all_btn.setText(t("start_all"))
+        self.stop_all_btn.setText(t("stop_all"))
+        self.support_btn.setText(t("support"))
+        self.support_btn.setToolTip(t("support_tip"))
+        self.lang_btn.setText(t("lang_switch"))
+        self.hint.setText(t("hint_empty"))
 
     # ---- 專案增刪 ----
     def import_project(self):
-        d = QFileDialog.getExistingDirectory(self, "選擇專案資料夾", HERE)
+        d = QFileDialog.getExistingDirectory(self, t("choose_dir"), HERE)
         if not d:
             return
         cfg = {
@@ -507,8 +639,7 @@ class Dashboard(QMainWindow):
         running = [c for c in self.cards if c.is_running()]
         if running:
             ans = QMessageBox.question(
-                self, "關閉",
-                f"還有 {len(running)} 個服務器在跑,關掉視窗會一起停掉。確定關閉?")
+                self, t("close_title"), t("close_confirm", n=len(running)))
             if ans != QMessageBox.Yes:
                 e.ignore()
                 return
@@ -521,6 +652,7 @@ class Dashboard(QMainWindow):
 def main():
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
+    set_lang(detect_lang())          # 開啟時依系統語言/上次選擇決定介面語言
     win = Dashboard()
     win.show()
     # 開起來就跳到最前面(從 .vbs/背景啟動時,預設可能被壓在其它視窗下)

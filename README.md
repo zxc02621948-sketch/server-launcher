@@ -28,7 +28,8 @@
 - 🌐 一鍵**在瀏覽器開啟** —— 會**自動從輸出抓真實網址**,不會開錯 port
 - 🧹 清日誌、✎ 編輯(名稱 / 資料夾 / port / 指令)、🗑 移除
 - ⏯️ **全部啟動 / 全部停止**
-- 🪟 原生視窗(PySide6)、深色主題、繁體中文
+- 🪟 原生視窗(PySide6)、深色主題、**中英雙語**(依系統語言自動切換,工具列也有「中 / EN」鈕可手動切)
+- 🌍 Bilingual UI (中文 / English) — auto-detects your system language, with a one-click toggle
 
 ## 安裝與執行 / Install & Run
 
